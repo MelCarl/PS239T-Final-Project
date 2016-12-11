@@ -1,0 +1,60 @@
+---
+title: 'PS239T Final Project R Script: Data Cleaning and Merging'
+author: "Melissa Carlson"
+date: "December 11, 2016"
+output: pdf_document
+---
+
+
+Part 1: Cleaning the Data I scraped from Wikipedia
+
+In the R script below, I take the csv file that I scraped from Wikipedia's historical list of seiges, clean it, and add several columns of data, producing several different data sets, which I have saved in the 'Data' folder as csv files. 
+
+```{r}
+#Setting my working directory
+setwd(dir= "/Users/MelissaCarlson/Desktop/PS239T-Final-Project/Data")
+
+#Remove all existing objects in my environment
+rm(list=ls())
+
+#Loading the required libraries for data cleaning
+library(foreign)
+library(dplyr)
+library(tidyr)
+
+#Importing the data I scraped from Wikipedia
+scraped_siege_list <- read.csv(file= "1-ListofSiegesScrapedfromWikipedia.csv", stringsAsFactors=F, header = FALSE)
+
+#Changing the names of the header of the dataset
+names(scraped_siege_list) <- c("SiegeName", "Year", "Location")
+
+#Splitting the SeigeName column, which currently has all data, 
+#into two columns, "Name" of the siege and "Year"
+scraped_siege_list <- separate(scraped_siege_list, SiegeName, c("Name", "Year"), sep = "[(]")
+
+#Splitting the Year column, which currently has the years and 
+#name of the war, into two columns, "Year" and "WarName"
+scraped_siege_list <- separate(scraped_siege_list, Year, c("Year", "WarName"), sep = "[)-]")
+
+#Getting rid of extra, blank rows
+SiegeList_Cleaned <- scraped_siege_list[1:3]
+
+#I now export the dataframe as a csv. There are several errors I need to fix manually, 
+#and several sieges I need to add that were not on the Wikipedia list. I also added 
+#another column of data about siege characteristics
+write.csv(SiegeList_Cleaned, file = "2-SiegeList-Cleaned.csv")
+
+#Reloading the final data set back into R
+ModernSiegeList <- read.csv(file="3-SiegeList-Cleaned-additions.csv", stringsAsFactors=F)
+
+#Since I want to visualize the number of sieges per war, I use the spread 
+#and gather functions from the dplyer package to create seperate dataframe 
+#(I do so by counting the number that a given war shows up in WarName)
+siegesperwar.df <- count(ModernSiegeList, WarName)
+
+#I export this particular data frame to add another data column from outside 
+#data and reload it back into R
+write.csv(siegesperwar.df, file = "4-SiegeperWar.csv")
+siegeperwar <- read.csv("5-SiegeperWar-additions.csv")
+
+```

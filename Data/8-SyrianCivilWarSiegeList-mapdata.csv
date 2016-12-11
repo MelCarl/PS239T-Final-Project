@@ -1,0 +1,19 @@
+,X,Name,StartDate,EndDate,WarName,Interstate_orCivil,GovorRebel,TargetMilorCivil,lat,long
+1,35,Siege of Aleppo ,1980,1980,Syrian Civil War,1,1,1,,
+2,56,Siege of Daraa ,2011,2011,Syrian Civil War,1,1,1,32.626434,36.103306
+3,57,Siege of Homs ,2011,2014,Syrian Civil War,1,1,1,34.732427,36.713696
+4,58,Siege of Baniyas ,2011,2011,Syrian Civil War,1,1,1,35.185262,35.953332
+5,59,Siege of Talkalakh,2011,2011,Syrian Civil War,1,1,1,34.668272,36.257661
+6,60,Siege of Rastan and Talbiseh ,2011,2011,Syrian Civil War,1,1,1,34.924959,36.733459
+7,61,Siege of Hama ,2011,2011,Syrian Civil War,1,1,1,35.140888,36.755199
+8,62,Siege of Latakia ,2011,2011,Syrian Civil War,1,1,1,35.540710,35.795267
+9,63,Battle of Aleppo ,2012,2017,Syrian Civil War,1,1,1,36.227935,37.170310
+10,64,Siege of Menagh Air Base ,2012,2013,Syrian Civil War,1,0,0,36.522043,37.037035
+11,66,Siege of Base 46,2012,2012,Syrian Civil War,1,0,0,36.131371,36.919830
+12,67,Siege of Nubl and Al-Zahraa,2012,2016,Syrian Civil War,1,0,1,36.375567,36.991712
+13,68,Siege of Darayya and Muadamiyat,2012,2016,Syrian Civil War,1,1,1,33.456443,36.235963
+14,69,Siege of Madaya,2015,2017,Syrian Civil War,1,1,1,33.690496,36.101897
+15,70,First Siege of Wadi Deif ,2012,2013,Syrian Civil War,1,0,0,30.092475,31.208412
+16,71,Second Siege of Wadi Deif ,2014,2014,Syrian Civil War,1,0,0,30.092475,31.208412
+17,76,Siege of Kobanî ,2014,2015,Syrian Civil War,1,0,1,36.890343,38.350011
+18,77,Siege of Al-Fu'ah-Kafriya ,2015,2016,Syrian Civil War,1,0,1,35.981934,36.705820

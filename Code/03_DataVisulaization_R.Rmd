@@ -1,0 +1,192 @@
+---
+title: 'PS239T Final Project R Script: Data Visualization'
+author: "Melissa Carlson"
+date: "December 10, 2016"
+output: pdf_document
+---
+
+Part 2: Visualizing the Data
+
+Using the csv files I produced during the 'cleaning' process, I visualize the data through graphs and maps that demonstrate (1) use of siege tactics in war overtime; (2) the relationship between war duration and number of sieges in a given war; (3) use of seige tactics by rebel groups and the government in the Syrian civil war; and (4) the geographic spread of sieges that have occured in the Syrian civil war.
+
+```{r}
+#Removing all objects in my workspace
+rm(list=ls())
+
+#Setting my working directory
+setwd(dir="/Users/MelissaCarlson/Desktop/PS239T-Final-Project/Data")
+
+#First I load the relevant packages to visualize and map the data
+library(maps)       
+library(mapdata)    
+library(rgdal)
+library(rgeos)
+library(maptools)
+library(tmap)
+library(ggplot2)
+
+#I also reload the following packages for cleaning since I have to rearrange/filter several variables for mapping
+library(foreign)
+library(dplyr)
+library(tidyr)
+
+#I load in the cleaned data set
+siegeperwar.FINALdf <- read.csv("5-SiegeperWar-additions.csv")
+```
+
+
+Graph 1: Number of Sieges in Modern Wars, Over Time
+```{r}
+#Since I want to have the dots colored according to whether the war was an inter-state or civil war, I need to turn the 'Interstate_orCivil' column into a factor
+siegeperwar.FINALdf$Interstate_orCivil <- factor(siegeperwar.FINALdf$Interstate_orCivil)
+
+#Using ggplot, I graph the start date of the war on the x-axis, and the number of sieges per war on the y-axis. The plot produced has points for each war, with each point varying in size according to the number of sieges for that particular war, and the color of each point varying according to war type
+
+NumSiegeOverTime <- ggplot(data = siegeperwar.FINALdf) + 
+  geom_point(aes( x = StartDate, y = as.numeric(NumberSiege), color = Interstate_orCivil, size = NumberSiege)) +
+  scale_fill_discrete(name = c("Interstate_orCivil" = "War Type"),
+labels = c("0" = "Interstate", "1" = "Civil")) +
+  geom_text(aes(x = StartDate, y = as.numeric(NumberSiege), label= ifelse(NumberSiege>1, as.character(WarName),'')),hjust= 1, vjust= -1, size = 2.5, position = "jitter") +
+  theme_bw() +
+  xlab("Year War Started") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Number of Sieges") + 
+  ggtitle("Frequency of Siege Tactic Use in Modern Warfare")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+NumSiegeOverTime
+
+#Save into file
+ggsave(filename="NumSiegeOverTime.jpg", plot=NumSiegeOverTime)
+```
+
+
+Graph 2: Does War Duration Increase the Number of Sieges in a War?
+
+A common assertion in the literature on civilian victimization is that, when wars have gone on for many years, governments become unwilling to bear the costs, or think they will lose, so they victimize civilians to end the war quickly. This indicates that we should observe more seiges during longer wars. As such, this graph uses geom_smooth to examine the correlation between war duration and the number of seiges per war. In addition to a bivariate regression line, I addedd the actual points, colored according to whether it was an interstate or civil war to see if there was differing numbers of sieges across war type. 
+
+```{r}
+#I first create a variable called WarDuration that subtracts the end date of the war by the start date, and then adds 1 for wars that were less than a year long
+siegeperwar.FINALdf$WarDuration <- siegeperwar.FINALdf$EndDate - siegeperwar.FINALdf$StartDate
+siegeperwar.FINALdf$WarDuration <- ifelse(siegeperwar.FINALdf$WarDuration ==0, siegeperwar.FINALdf$WarDuration + 1, siegeperwar.FINALdf$WarDuration + 0)
+
+#I then plot the relationship between war duration and number of seiges per war
+
+WarDurationSiegeNum <- ggplot(data = siegeperwar.FINALdf, aes(x = WarDuration, y = NumberSiege)) + 
+  geom_smooth(col=8) +
+  geom_point(aes(x = WarDuration, y = NumberSiege, color = Interstate_orCivil)) +
+  scale_fill_continuous(guide = "legend") +
+  geom_text(aes(x = WarDuration, y = NumberSiege, label= as.character(WarName)),hjust= 0, vjust= -1, size = 2.5, position = "jitter") +
+  ggtitle("Does War Duration Increase Number of Sieges?") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+  
+WarDurationSiegeNum
+
+#Save into file
+ggsave(filename="WarDurationSiegeNum.jpg", plot=WarDurationSiegeNum)
+```
+
+
+Graph 3: Use of Siege Tactics in the Syrian Civil War
+
+The Syrian civil war is a motivating case for my research project. As such, I wanted to specifically map the sieges that occured during this civil war, see whether the government or rebel groups were more likely to use siege tactics, whether targets were military or civilian, and how these trends changed over time. The graph produced thus graphs the start date of sieges on the x-axis, and the end date of the sieges on the y-axis. Each point has a different shape depending on whether the government conducted the siege (triangle) or rebel groups conducted the siege (circle). The color of the points varies depending on if the target was civilian (red) or military (black).
+
+```{r}
+#I first need to reload the relevant data set
+ModernSiegeList <- read.csv(file="3-SiegeList-Cleaned-additions.csv", stringsAsFactors=F)
+
+#Then I subset the data frame so that it just contains sieges that occured in the Syrian Civil war
+SyrianCivilWarSiegeList <- filter(ModernSiegeList, WarName == "Syrian Civil War")
+SyrianCivilWarSiegeList.final <- separate(SyrianCivilWarSiegeList, Year, c("StartDate", "EndDate"))
+
+#I export this data frame so that I can add two columns, one that indicates whether rebel groups or the government conducted the siege, and the second indicating whether the target of the siege was civilian or military. 
+write.csv(SyrianCivilWarSiegeList.final, "6-SyrianCivilWarSiegeList.csv")
+siegeSyriafinal <- read.csv("7-SyrianCivilWarSiegeList-additions.csv")
+
+#I now turn the columns with binary data into factors 
+siegeSyriafinal$TargetMilorCivil <- factor(siegeSyriafinal$TargetMilorCivil)
+siegeSyriafinal$GovorRebel <- factor(siegeSyriafinal$GovorRebel)
+
+#One siege occured in Syria during the 1980s - since this is out of the scope of the current civil war, I remove it from the data frame
+siegeSyriafinal <- siegeSyriafinal[-1,]
+
+#Now I use ggplot to construct the graph
+SiegeTacticsSyrianWar <- ggplot(data = siegeSyriafinal, aes(x = StartDate, y = EndDate)) +
+  geom_text(aes(x = StartDate, y = EndDate, label= Name), hjust= 0.5, vjust= 1.5, size = 2.5) +
+  geom_point(color = siegeSyriafinal$TargetMilorCivil, shape = siegeSyriafinal$GovorRebel, size = 4) +
+  scale_fill_continuous(guide = "legend") +
+  theme_bw() +
+  xlab("Year Siege Started") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Year Siege Ended") + 
+  ggtitle("Use of Siege Tactics in Syrian Civil War")+
+  theme(plot.title = element_text(hjust = 0.5)) +
+  guides(color = "legend")
+ 
+SiegeTacticsSyrianWar
+
+#Save into file
+ggsave(filename="SiegeTacticsSyrianWar.jpg", plot=SiegeTacticsSyrianWar)
+```
+
+
+Graph (Map) 4: Geographic Distribution of Sieges in Syria
+
+Below, I plot where each siege occured in Syria, with each geographic point colored according to whether it is a civilian target (red for government, pink for rebel groups) or a military target (blue), and shaped according to whether the government conducted the siege (triangle) or rebel groups conducted the siege (circle). This demonstrates whether sieges are concentrated in a particular area of the country. 
+```{r cars}
+#I first load the relevant data set that contains longitude and latitude of the seige locations
+siegeSyriamap <- read.csv("8-SyrianCivilWarSiegeList-mapdata.csv")
+
+#For some reason (which I cannot figure out) the binary variables need to be 1s and 2s, instead 1s and 0s
+siegeSyriamap$GovorRebel <- siegeSyriamap$GovorRebel +1
+siegeSyriamap$GovorRebel <- as.numeric(siegeSyriamap$GovorRebel)
+
+siegeSyriamap$TargetMilorCivil <- siegeSyriamap$TargetMilorCivil +1
+siegeSyriamap$TargetMilorCivil <- as.numeric(siegeSyriamap$TargetMilorCivil)
+
+#Now, using the map package, I get the map of Syria, and put black points where each city is in the country
+SyriaMap <- map('worldHires', 'Syria', col = "gray80", fill = TRUE)
+map.cities(world.cities, "Syria")
+
+####I think i need to add one to the binary variables and make them numeric
+#I filter the data frame to get the sieges initiated by the government, and store it in its own variable
+Govinitiated <- filter(siegeSyriamap, GovorRebel==2)
+
+#I then create a variable of the longitude and latitude of government initiated sieges 
+dat_coords_Govinitiated <- cbind(Govinitiated$long, Govinitiated$lat)
+
+#I then plot these points on the above map, specifiying the color (red becuase all are civilian targets) and shape (triangle)
+points(dat_coords_Govinitiated, col = 2,  pch=17)
+
+#I place the name of the siege next to each location
+text(dat_coords_Govinitiated, labels = Govinitiated$Name, pos = 4, offset = 0.25, cex = 0.5)
+
+#I then filter the data frame to get the sieges initiated by rebel groups, and store it in its own variable
+Rebelinitiated <- filter(siegeSyriamap, GovorRebel==1)
+
+#I filter these sieges again according to whether they targeted military or civil areas, creating two variables
+Rebelinitiated_Civil <- filter(Rebelinitiated, TargetMilorCivil==2)
+Rebelinitiated_Mil <- filter(Rebelinitiated, TargetMilorCivil==1)
+
+#I then create variables of the longitude and latitude of rebel initiated sieges, one for civilian targets, one for military targets
+dat_coords_Rebelinitiated_Civil <- cbind(Rebelinitiated_Civil$long, Rebelinitiated_Civil$lat)
+dat_coords_Rebelinitiated_Mil <- cbind(Rebelinitiated_Mil$long, Rebelinitiated_Mil$lat)
+
+#I then plot these points on the above map, specifiying the color (pink becuase civilian targets) and shape (circle). 
+points(dat_coords_Rebelinitiated_Civil, col=6, pch=20)
+
+#I place the name of the siege next to each location
+text(dat_coords_Rebelinitiated_Civil, labels = Rebelinitiated_Civil$Name, pos = 4, offset = 0.25, cex = 0.5)
+
+#I then plot these points on the above map, specifiying the color (blue because military targets) and shape (circle)
+points(dat_coords_Rebelinitiated_Mil, col=4, pch=20)
+
+#I place the name of the siege next to each location
+text(dat_coords_Rebelinitiated_Mil, labels = Rebelinitiated_Mil$Name, pos = 4, offset = 0.25, cex = 0.5)
+
+SyriaMap
+
+#Save into file
+ggsave(filename="SyriaMap.pdf", map=SyriaMap)
+
+```
